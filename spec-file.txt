@@ -1,0 +1,18 @@
+# This file may be used to create an environment using:
+# $ conda create --name <env> --file <this file>
+# platform: linux-64
+decorator=4.0.6=py35_0
+freetype=2.5.5=0
+graphviz=2.38.0=0
+libpng=1.6.17=0
+networkx=1.10=py35_0
+openssl=1.0.2e=0
+pip=7.1.2=py35_0
+python=3.5.1=0
+readline=6.2=2
+setuptools=19.2=py35_0
+sqlite=3.9.2=0
+tk=8.5.18=0
+wheel=0.26.0=py35_1
+xz=5.0.5=0
+zlib=1.2.8=0
