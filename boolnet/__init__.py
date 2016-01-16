@@ -24,20 +24,35 @@ class BooleanBeliefNetwork:
 
     @classmethod
     def from_json(cls, json_path):
+        """
+        Generate boolean belief network from a JSON file
+
+        :param json_path:
+        :return:
+        """
         with open(json_path) as f:
             data = json.load(f)
 
         return cls(data)
 
     def draw(self, out_path, args=None):
+        """
+        Use graphviz' dot layout to generate an image of the belief network
+
+        :param out_path:
+        :param args:
+        :return:
+        """
         agraph = nx.to_agraph(self._g)
         agraph.layout('dot', args=args)
         agraph.draw(out_path)
 
-    def get_prob(self, var_name, var_state, **parent_states):
-        if set(parent_states) == set(self._g.predecessors(var_name)):
-            return self._get_prob_simple(var_name, var_state, **parent_states)
-        elif len(self._g.successors(var_name)) == 0 and len(parent_states) == 0:
+    def get_prob(self, var_name, var_state, **known_states):
+        neighbours = self._g.predecessors(var_name) + self._g.successors(var_name)
+        known_states = {key: value for key, value in known_states.items() if key in neighbours}
+        if set(known_states) == set(self._g.predecessors(var_name)):
+            return self._get_prob_simple(var_name, var_state, **known_states)
+        elif len(known_states) == 0:  # todo: I think that's true?
             return self.joint(**{var_name: var_state})
         else:
             raise NotImplementedError('Inference too complicated')
@@ -57,7 +72,7 @@ class BooleanBeliefNetwork:
     def _complete_joint(self, **var_states):
         prod = 1
         for var in self._g.nodes_iter():
-            prod *= self.get_prob(var, var_states[var], **var_states)
+            prod *= self._get_prob_simple(var, var_states[var], **var_states)
 
         return prod
 
@@ -96,5 +111,7 @@ def parse_truth_dict(d):
 
 
 if __name__ == "__main__":
-    path = 'example_data/data.json'
+    path = '../example_data/data.json'
     net = BooleanBeliefNetwork.from_json(path)
+    print(net.get_prob('A', True))
+    print(net.get_prob('R', True))
