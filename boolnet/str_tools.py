@@ -24,11 +24,13 @@ def parse_truth_dict(d):
     """
     :param d: dict (if variable has parents) or int (if not) for probability of variable being True given parent
     states, keyed on "TF"-style strings
-    :return: dict {self_state: {tuple(*parent_states): p}}
+    :return: function
     """
     try:
         p_true = {tuple(c.lower() == 't' for c in key) : val for key, val in d.items()}
         p_false = {key: 1-val for key, val in p_true.items()}
-        return {True: p_true, False: p_false}
+        lambda_dict = {True: p_true, False: p_false}
     except AttributeError:
-        return {True: {(): d}, False: {(): 1-d}}
+        lambda_dict = {True: {(): d}, False: {(): 1-d}}
+
+    return lambda query_state, parent_states: lambda_dict[query_state][parent_states]

@@ -1,7 +1,6 @@
 import itertools
 import json
 import networkx as nx
-import warnings
 
 from .str_tools import parse_var_parents, parse_truth_dict
 from .network_tools import are_d_separated
@@ -16,9 +15,9 @@ class BooleanBeliefNetwork:
         g = nx.DiGraph()
         for key, prob_dict in data.items():
             var, parents = parse_var_parents(key)
-            truth_table = parse_truth_dict(prob_dict)
+            prob_fn = parse_truth_dict(prob_dict)
 
-            g.add_node(var, parents=tuple(parents), init_probs=truth_table)
+            g.add_node(var, parents=tuple(parents), init_probs=prob_fn)
             for parent in parents:
                 g.add_edge(parent, var)
 
@@ -80,14 +79,14 @@ class BooleanBeliefNetwork:
 
         return p_this_state / (p_this_state + p_other_state)
 
-    def get_neighbours(self, var_name):
-        """
-        Get all neighbours of a variable.
-
-        :param var_name: str, name of variable
-        :return: list of names of parent and child variables
-        """
-        return self._g.predecessors(var_name) + self._g.successors(var_name)
+    # def get_neighbours(self, var_name):
+    #     """
+    #     Get all neighbours of a variable.
+    #
+    #     :param var_name: str, name of variable
+    #     :return: list of names of parent and child variables
+    #     """
+    #     return self._g.predecessors(var_name) + self._g.successors(var_name)
 
     def _get_prob_simple(self, var_name, var_state, **parent_states):
         """
@@ -100,7 +99,7 @@ class BooleanBeliefNetwork:
         """
         parents = self._g.node[var_name]['parents']
         parent_state_tuple = tuple(parent_states[parent] for parent in parents)
-        p = self._g.node[var_name]['init_probs'][var_state][parent_state_tuple]
+        p = self._g.node[var_name]['init_probs'](var_state, parent_state_tuple)
         return p
 
     def get_all_predecessors(self, var):
