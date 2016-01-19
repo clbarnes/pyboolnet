@@ -67,7 +67,7 @@ class BooleanBeliefNetwork:
         if set(known_states) == set(self._g.predecessors(var_name)):
             return self._get_prob_simple(var_name, var_state, **known_states)
         elif set(known_states) == set(self._g.successors(var_name)):
-            pass
+            return self._get_prob_inverse(var_name, var_state, **known_states)
         elif len(known_states) == 0:
             return self.joint(**{var_name: var_state})
         else:
@@ -97,6 +97,12 @@ class BooleanBeliefNetwork:
         return p
 
     def get_all_predecessors(self, var):
+        """
+        Recursively the set of nodes which are predecessors of the given variable.
+
+        :param var: node
+        :return: set of nodes
+        """
         preds = set()
         preds.update(self._g.predecessors(var))
         for item in preds:
@@ -115,7 +121,13 @@ class BooleanBeliefNetwork:
         return False
 
     def are_conditionally_independent(self, query_vars, *given_vars):
-        assert len(query_vars) > 1
+        """
+        Return whether the set of query variables are conditionally independent given the states of some other variables
+
+        :param query_vars: sequence of query variables
+        :param given_vars: optional arguments of given variables
+        :return: bool
+        """
         ret = True
         for query_var1, query_var2 in itertools.combinations(query_vars, 2):
             ret = ret and self._are_pair_conditionally_independent(query_var1, query_var2, *given_vars)
@@ -158,6 +170,21 @@ class BooleanBeliefNetwork:
 
         return total
 
+    def _get_prob_inverse(self, var_name, var_state, **known_states):
+        children = self._g.successors(var_name)
+        known_states = {var: state for var, state in known_states.items() if var in children}
+
+        if not self.are_conditionally_independent(children, var_name):
+            raise NotImplementedError('Inference too complicated')
+
+        numerator = self.get_prob(var_name, var_state)
+        for var, state in known_states.items():
+            numerator *= self.get_prob(var, state, **{var_name: var_state})
+
+        denominator = self.joint(**known_states)
+
+        return numerator/denominator
+
 
 def shave_leaves(g):
     """
@@ -190,7 +217,7 @@ def prod(numbers):
 
 def parse_var_parents(s):
     """
-    Parse univariate probability string and return the variable name and the names of its parents.
+    Parse a probability string and return the variable name and the names of its conditions.
 
     :param s: "p(A|B,C)"-style string
     :return: tuple(variable_name, [list, of, parent, variables])
@@ -221,5 +248,4 @@ def parse_truth_dict(d):
 if __name__ == "__main__":
     path = '../example_data/data.json'
     net = BooleanBeliefNetwork.from_json(path)
-    print(net.get_prob('A', True))
-    print(net.get_prob('R', True))
+    print(net.get_prob('A', True, N=False, M=True))
