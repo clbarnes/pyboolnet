@@ -1,6 +1,7 @@
 import itertools
 import json
 import networkx as nx
+import warnings
 
 from .str_tools import parse_var_parents, parse_truth_dict
 from .network_tools import are_d_separated
@@ -49,28 +50,35 @@ class BooleanBeliefNetwork:
         agraph.layout('dot', args=args)
         agraph.draw(out_path)
 
+    # def _get_prob_dep(self, var_name, var_state, **known_states):
+    #     """
+    #     Master method for getting any single conditional probability for any conditions (WIP)
+    #
+    #     :param var_name: Name of query variable
+    #     :param var_state: State of query variable
+    #     :param known_states: keyword arguments of name=state pairs for all known variables
+    #     :return: float of conditional probability
+    #     """
+    #
+    #     if var_name in known_states:
+    #         return 1 if known_states[var_name] == var_state else 0
+    #
+    #     # neighbours = self._g.predecessors(var_name) + self._g.successors(var_name)
+    #     # known_states = {key: value for key, value in known_states.items() if key in neighbours}
+    #     if set(known_states) == set(self._g.predecessors(var_name)):
+    #         return self._get_prob_simple(var_name, var_state, **known_states)
+    #     elif len(known_states) == 0:
+    #         return self.joint(**{var_name: var_state})
+    #     elif set(known_states) == set(self._g.successors(var_name)):
+    #         return self._get_prob_inverse(var_name, var_state, **known_states)
+    #     else:
+    #         raise NotImplementedError('Inference too complicated')
+
     def get_prob(self, var_name, var_state, **known_states):
-        """
-        Master method for getting any single conditional probability for any conditions (WIP)
+        p_this_state = self.joint(**{var_name: var_state}, **known_states)
+        p_other_state = self.joint(**{var_name: not var_state}, **known_states)
 
-        :param var_name: Name of query variable
-        :param var_state: State of query variable
-        :param known_states: keyword arguments of name=state pairs for all known variables
-        :return: float of conditional probability
-        """
-        if var_name in known_states:
-            return 1 if known_states[var_name] == var_state else 0
-
-        neighbours = self._g.predecessors(var_name) + self._g.successors(var_name)
-        known_states = {key: value for key, value in known_states.items() if key in neighbours}
-        if set(known_states) == set(self._g.predecessors(var_name)):
-            return self._get_prob_simple(var_name, var_state, **known_states)
-        elif set(known_states) == set(self._g.successors(var_name)):
-            return self._get_prob_inverse(var_name, var_state, **known_states)
-        elif len(known_states) == 0:
-            return self.joint(**{var_name: var_state})
-        else:
-            raise NotImplementedError('Inference too complicated')
+        return p_this_state / (p_this_state + p_other_state)
 
     def get_neighbours(self, var_name):
         """
@@ -162,17 +170,17 @@ class BooleanBeliefNetwork:
 
         return total
 
-    def _get_prob_inverse(self, var_name, var_state, **known_states):
-        children = self._g.successors(var_name)
-        known_states = {var: state for var, state in known_states.items() if var in children}
-
-        if not self.are_conditionally_independent(children, var_name):
-            raise NotImplementedError('Inference too complicated')
-
-        numerator = self.get_prob(var_name, var_state)
-        for var, state in known_states.items():
-            numerator *= self.get_prob(var, state, **{var_name: var_state})
-
-        denominator = self.joint(**known_states)
-
-        return numerator/denominator
+    # def _get_prob_inverse(self, var_name, var_state, **known_states):
+    #     children = self._g.successors(var_name)
+    #     known_states = {var: state for var, state in known_states.items() if var in children}
+    #
+    #     if not self.are_conditionally_independent(children, var_name):
+    #         raise NotImplementedError('Inference too complicated')
+    #
+    #     numerator = self.get_prob(var_name, var_state)
+    #     for var, state in known_states.items():
+    #         numerator *= self.get_prob(var, state, **{var_name: var_state})
+    #
+    #     denominator = self.joint(**known_states)
+    #
+    #     return numerator/denominator

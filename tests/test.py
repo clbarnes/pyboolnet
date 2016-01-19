@@ -1,5 +1,7 @@
 from pyboolnet.boolnet import BooleanBeliefNetwork
 
-anmr_path = '../example_data/wanmr.json'
-net = BooleanBeliefNetwork.from_json(anmr_path)
-print(net.get_prob('R', True))
+anmr = BooleanBeliefNetwork.from_json('../example_data/anmr.json')
+wanmr = BooleanBeliefNetwork.from_json('../example_data/wanmr.json')
+
+print(anmr.get_prob('R', True, A=False))
+print(wanmr.get_prob('R', True, A=False))
