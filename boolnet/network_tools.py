@@ -17,14 +17,15 @@ def are_d_separated(g, query_var1, query_var2, *given_vars):
 
 def is_path_blocked(graph, path, given_vars):
     for i, node in enumerate(path[1:-1], 1):
-        if node in given_vars:
+        if node in given_vars:  # if node is in evidence set and...
             if graph.has_edge(node, path[i-1]) and graph.has_edge(node, path[i+1]):  # tail to tail
                 return True
             if graph.has_edge(path[i-1], node) and graph.has_edge(node, path[i+1]):  # right right
                 return True
             if graph.has_edge(path[i+1], node) and graph.has_edge(node, path[i-1]):  # left left
                 return True
-        elif graph.has_edge(path[i-1], node) and graph.has_edge(path[i+1], node):  # head to head
+        elif graph.has_edge(path[i-1], node) and graph.has_edge(path[i+1], node):  # node not in evidence set, head to
+            # head
             return True
 
     return False
