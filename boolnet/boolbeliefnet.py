@@ -49,44 +49,20 @@ class BooleanBeliefNetwork:
         agraph.layout('dot', args=args)
         agraph.draw(out_path)
 
-    # def _get_prob_dep(self, var_name, var_state, **known_states):
-    #     """
-    #     Master method for getting any single conditional probability for any conditions (WIP)
-    #
-    #     :param var_name: Name of query variable
-    #     :param var_state: State of query variable
-    #     :param known_states: keyword arguments of name=state pairs for all known variables
-    #     :return: float of conditional probability
-    #     """
-    #
-    #     if var_name in known_states:
-    #         return 1 if known_states[var_name] == var_state else 0
-    #
-    #     # neighbours = self._g.predecessors(var_name) + self._g.successors(var_name)
-    #     # known_states = {key: value for key, value in known_states.items() if key in neighbours}
-    #     if set(known_states) == set(self._g.predecessors(var_name)):
-    #         return self._get_prob_simple(var_name, var_state, **known_states)
-    #     elif len(known_states) == 0:
-    #         return self.joint(**{var_name: var_state})
-    #     elif set(known_states) == set(self._g.successors(var_name)):
-    #         return self._get_prob_inverse(var_name, var_state, **known_states)
-    #     else:
-    #         raise NotImplementedError('Inference too complicated')
-
     def get_prob(self, var_name, var_state, **known_states):
+        """
+        Master method for getting any single conditional probability for any conditions
+
+        :param var_name: Name of query variable
+        :param var_state: State of query variable
+        :param known_states: keyword arguments of name=state pairs for all known variables
+        :return: float of conditional probability
+        """
+        assert var_name in self._g.nodes()
         p_this_state = self.joint(**{var_name: var_state}, **known_states)
         p_other_state = self.joint(**{var_name: not var_state}, **known_states)
 
         return p_this_state / (p_this_state + p_other_state)
-
-    # def get_neighbours(self, var_name):
-    #     """
-    #     Get all neighbours of a variable.
-    #
-    #     :param var_name: str, name of variable
-    #     :return: list of names of parent and child variables
-    #     """
-    #     return self._g.predecessors(var_name) + self._g.successors(var_name)
 
     def _get_prob_simple(self, var_name, var_state, **parent_states):
         """
@@ -127,11 +103,11 @@ class BooleanBeliefNetwork:
         :param given_vars: optional arguments of given variables
         :return: bool
         """
-        ret = True
         for query_var1, query_var2 in itertools.combinations(query_vars, 2):
-            ret = ret and self._are_pair_conditionally_independent(query_var1, query_var2, *given_vars)
+            if not self._are_pair_conditionally_independent(query_var1, query_var2, *given_vars):
+                return False
 
-        return ret
+        return True
 
     def joint(self, **var_states):
         """
@@ -168,18 +144,3 @@ class BooleanBeliefNetwork:
             total += self._complete_joint(**var_states, **marginal_var_states)
 
         return total
-
-    # def _get_prob_inverse(self, var_name, var_state, **known_states):
-    #     children = self._g.successors(var_name)
-    #     known_states = {var: state for var, state in known_states.items() if var in children}
-    #
-    #     if not self.are_conditionally_independent(children, var_name):
-    #         raise NotImplementedError('Inference too complicated')
-    #
-    #     numerator = self.get_prob(var_name, var_state)
-    #     for var, state in known_states.items():
-    #         numerator *= self.get_prob(var, state, **{var_name: var_state})
-    #
-    #     denominator = self.joint(**known_states)
-    #
-    #     return numerator/denominator
